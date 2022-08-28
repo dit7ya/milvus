@@ -38,20 +38,20 @@ def milvus_recall_test(host='127.0.0.1'):
     collection = Collection(name="sift_128_euclidean", schema=default_schema)
     nb = len(train)
     batch_size = 50000
-    epoch = int(nb / batch_size)
+    epoch = nb // batch_size
     t0 = time.time()
     for i in range(epoch):
         print("epoch:", i)
         start = i * batch_size
         end = (i + 1) * batch_size
-        if end > nb:
-            end = nb
+        end = min(end, nb)
         data = [
-            [i for i in range(start, end)],
+            list(range(start, end)),
             [np.float32(i) for i in range(start, end)],
             [str(i) for i in range(start, end)],
-            train[start:end]
+            train[start:end],
         ]
+
         collection.insert(data)
     t1 = time.time()
     print(f"\nInsert {nb} vectors cost {t1 - t0:.4f} seconds")
@@ -95,9 +95,7 @@ def milvus_recall_test(host='127.0.0.1'):
     print(f"search cost  {t1 - t0:.4f} seconds")
     result_ids = []
     for hits in res:
-        result_id = []
-        for hit in hits:
-            result_id.append(hit.entity.get("int64"))
+        result_id = [hit.entity.get("int64") for hit in hits]
         result_ids.append(result_id)
 
     # calculate recall

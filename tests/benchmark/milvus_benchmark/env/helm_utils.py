@@ -32,16 +32,13 @@ def update_server_config(server_name, server_tag, server_config):
     cpus = config.DEFAULT_CPUS
     if server_name:
         try:
-            cpus = get_host_cpus(server_name)
-            if not cpus:
-                cpus = config.DEFAULT_CPUS
+            cpus = get_host_cpus(server_name) or config.DEFAULT_CPUS
         except Exception as e:
-            logger.error("Get cpus on host: {} failed".format(server_name))
+            logger.error(f"Get cpus on host: {server_name} failed")
             logger.error(str(e))
-        if server_config:
-            if "cpus" in server_config.keys():
-                cpus = server_config["cpus"]
-        # self.hardware = Hardware(name=self.hostname, cpus=cpus)
+        if server_config and "cpus" in server_config.keys():
+            cpus = server_config["cpus"]
+            # self.hardware = Hardware(name=self.hostname, cpus=cpus)
     if server_tag:
         cpus = int(server_tag.split("c")[0])
     kv = {"cpus": cpus}
@@ -62,20 +59,17 @@ return: no return
 def update_values(file_path, deploy_mode, hostname, server_tag, milvus_config, server_config=None):
     # bak values.yaml
     file_name = os.path.basename(file_path)
-    bak_file_name = file_name + ".bak"
+    bak_file_name = f"{file_name}.bak"
     file_parent_path = os.path.dirname(file_path)
-    bak_file_path = file_parent_path + '/' + bak_file_name
+    bak_file_path = f'{file_parent_path}/{bak_file_name}'
     if os.path.exists(bak_file_path):
-        os.system("cp %s %s" % (bak_file_path, file_path))
+        os.system(f"cp {bak_file_path} {file_path}")
     else:
-        os.system("cp %s %s" % (file_path, bak_file_path))
+        os.system(f"cp {file_path} {bak_file_path}")
     with open(file_path) as f:
         values_dict = full_load(f)
         f.close()
-    cluster = False
-    if deploy_mode == "cluster":
-        cluster = True
-
+    cluster = deploy_mode == "cluster"
     # TODO: disable change config
     # cluster = False
     # if "cluster" in milvus_config and milvus_config["cluster"]:
@@ -185,28 +179,7 @@ def update_values(file_path, deploy_mode, hostname, server_tag, milvus_config, s
         node_config = {'instance-type': server_tag}
     cpus = server_config["cpus"]
     logger.debug(hostname)
-    if cluster is False:
-        if node_config:
-            values_dict['standalone']['nodeSelector'] = node_config
-            values_dict['minio']['nodeSelector'] = node_config
-            values_dict['etcd']['nodeSelector'] = node_config
-            # TODO: disable
-            # set limit/request cpus in resources
-            values_dict['standalone']['resources'] = {
-                "limits": {
-                    # "cpu": str(int(cpus)) + ".0"
-                    "cpu": str(int(cpus)) + ".0"
-                },
-                "requests": {
-                    "cpu": str(int(cpus) // 2 + 1) + ".0"
-                    # "cpu": "4.0"
-                }
-            }
-            logger.debug("Add tolerations into standalone server")
-            values_dict['standalone']['tolerations'] = perf_tolerations
-            values_dict['minio']['tolerations'] = perf_tolerations
-            values_dict['etcd']['tolerations'] = perf_tolerations
-    else:
+    if cluster:
         # values_dict['pulsar']["broker"]["configData"].update({"maxMessageSize": "52428800", "PULSAR_MEM": BOOKKEEPER_PULSAR_MEM})
         # values_dict['pulsar']["bookkeeper"]["configData"].update({"nettyMaxFrameSizeBytes": "52428800", "PULSAR_MEM": BROKER_PULSAR_MEM})
         values_dict['proxynode']['nodeSelector'] = node_config
@@ -237,6 +210,21 @@ def update_values(file_path, deploy_mode, hostname, server_tag, milvus_config, s
             # values_dict['pulsar']['bookkeeper']['tolerations'] = perf_tolerations
             # values_dict['pulsar']['zookeeper']['tolerations'] = perf_tolerations
 
+    elif node_config:
+        values_dict['standalone']['nodeSelector'] = node_config
+        values_dict['minio']['nodeSelector'] = node_config
+        values_dict['etcd']['nodeSelector'] = node_config
+            # TODO: disable
+            # set limit/request cpus in resources
+        values_dict['standalone']['resources'] = {
+            "limits": {"cpu": f"{int(cpus)}.0"},
+            "requests": {"cpu": f"{str(int(cpus) // 2 + 1)}.0"},
+        }
+
+        logger.debug("Add tolerations into standalone server")
+        values_dict['standalone']['tolerations'] = perf_tolerations
+        values_dict['minio']['tolerations'] = perf_tolerations
+        values_dict['etcd']['tolerations'] = perf_tolerations
     # add extra volumes
     values_dict['extraVolumes'] = [{
         'name': 'test',
@@ -262,22 +250,22 @@ def update_values(file_path, deploy_mode, hostname, server_tag, milvus_config, s
     f.close()
     # DEBUG
     with open(file_path) as f:
-        for line in f.readlines():
+        for line in f:
             line = line.strip("\n")
             logger.debug(line)
 
 
 # deploy server
 def helm_install_server(helm_path, deploy_mode, image_tag, image_type, name, namespace):
-    logger.debug("Server deploy mode: %s" % deploy_mode)
-    host = "%s-milvus-ha.%s.svc.cluster.local" % (name, namespace)
+    logger.debug(f"Server deploy mode: {deploy_mode}")
+    host = f"{name}-milvus-ha.{namespace}.svc.cluster.local"
     # TODO: update etcd config
-    etcd_config_map_cmd = "kubectl create configmap -n %s %s --from-literal=ETCD_QUOTA_BACKEND_BYTES=8589934592 --from-literal=ETCD_SNAPSHOT_COUNT=5000 --from-literal=ETCD_AUTO_COMPACTION_MODE=revision --from-literal=ETCD_AUTO_COMPACTION_RETENTION=1" % (
-        namespace, name)
+    etcd_config_map_cmd = f"kubectl create configmap -n {namespace} {name} --from-literal=ETCD_QUOTA_BACKEND_BYTES=8589934592 --from-literal=ETCD_SNAPSHOT_COUNT=5000 --from-literal=ETCD_AUTO_COMPACTION_MODE=revision --from-literal=ETCD_AUTO_COMPACTION_RETENTION=1"
+
     if os.system(etcd_config_map_cmd):
-        raise Exception("Create configmap: {} failed".format(name))
-    logger.debug("Create configmap: {} successfully".format(name))
-    log_path = config.LOG_PATH + "install.log"
+        raise Exception(f"Create configmap: {name} failed")
+    logger.debug(f"Create configmap: {name} successfully")
+    log_path = f"{config.LOG_PATH}install.log"
     install_cmd = "helm install \
             --set standalone.service.type=ClusterIP \
             --set image.all.repository=%s \
@@ -300,11 +288,11 @@ def helm_install_server(helm_path, deploy_mode, image_tag, image_type, name, nam
                 %s . >>%s >&1" % (config.REGISTRY_URL, image_tag, name, namespace, name, log_path)
         # --set image.all.pullPolicy=Always \
     elif deploy_mode != "single":
-        raise Exception("Deploy mode: {} not support".format(deploy_mode))
+        raise Exception(f"Deploy mode: {deploy_mode} not support")
     logger.debug(install_cmd)
     logger.debug(host)
-    if os.system("cd %s && %s" % (helm_path, install_cmd)):
-        logger.error("Helm install failed: %s" % name)
+    if os.system(f"cd {helm_path} && {install_cmd}"):
+        logger.error(f"Helm install failed: {name}")
         return None
     logger.debug("Wait for 60s ..")
     time.sleep(60)
@@ -328,76 +316,79 @@ def helm_install_server(helm_path, deploy_mode, image_tag, image_type, name, nam
 def helm_del_server(name, namespace):
     # logger.debug("Sleep 600s before uninstall server")
     # time.sleep(600)
-    delete_etcd_config_map_cmd = "kubectl delete configmap -n %s %s" % (namespace, name)
+    delete_etcd_config_map_cmd = f"kubectl delete configmap -n {namespace} {name}"
     logger.info(delete_etcd_config_map_cmd)
     if os.system(delete_etcd_config_map_cmd):
-        logger.error("Delete configmap %s:%s failed" % (namespace, name))
-    del_cmd = "helm uninstall -n milvus %s" % name
+        logger.error(f"Delete configmap {namespace}:{name} failed")
+    del_cmd = f"helm uninstall -n milvus {name}"
     logger.info(del_cmd)
     if os.system(del_cmd):
-        logger.error("Helm delete name:%s failed" % name)
+        logger.error(f"Helm delete name:{name} failed")
         return False
     return True
 
 
 def restart_server(helm_release_name, namespace):
     res = True
-    timeout = 120000
     # service_name = "%s.%s.svc.cluster.local" % (helm_release_name, namespace)
     config.load_kube_config()
     v1 = client.CoreV1Api()
-    pod_name = None
     # config_map_names = v1.list_namespaced_config_map(namespace, pretty='true')
     # body = {"replicas": 0}
     pods = v1.list_namespaced_pod(namespace)
-    for i in pods.items:
-        if i.metadata.name.find(helm_release_name) != -1 and i.metadata.name.find("mysql") == -1:
-            pod_name = i.metadata.name
-            break
-            # v1.patch_namespaced_config_map(config_map_name, namespace, body, pretty='true')
+    pod_name = next(
+        (
+            i.metadata.name
+            for i in pods.items
+            if i.metadata.name.find(helm_release_name) != -1
+            and i.metadata.name.find("mysql") == -1
+        ),
+        None,
+    )
+
     # status_res = v1.read_namespaced_service_status(helm_release_name, namespace, pretty='true')
-    logger.debug("Pod name: %s" % pod_name)
-    if pod_name is not None:
-        try:
-            v1.delete_namespaced_pod(pod_name, namespace)
-        except Exception as e:
-            logger.error(str(e))
-            logger.error("Exception when calling CoreV1Api->delete_namespaced_pod")
-            res = False
-            return res
-        logger.error("Sleep 10s after pod deleted")
-        time.sleep(10)
-        # check if restart successfully
-        pods = v1.list_namespaced_pod(namespace)
-        for i in pods.items:
-            pod_name_tmp = i.metadata.name
-            logger.error(pod_name_tmp)
-            if pod_name_tmp == pod_name:
-                continue
-            elif pod_name_tmp.find(helm_release_name) == -1 or pod_name_tmp.find("mysql") != -1:
-                continue
-            else:
+    logger.debug(f"Pod name: {pod_name}")
+    if pod_name is None:
+        raise Exception(f"Pod: {pod_name} not found")
+    try:
+        v1.delete_namespaced_pod(pod_name, namespace)
+    except Exception as e:
+        logger.error(str(e))
+        logger.error("Exception when calling CoreV1Api->delete_namespaced_pod")
+        res = False
+        return res
+    logger.error("Sleep 10s after pod deleted")
+    time.sleep(10)
+    # check if restart successfully
+    pods = v1.list_namespaced_pod(namespace)
+    timeout = 120000
+    for i in pods.items:
+        pod_name_tmp = i.metadata.name
+        logger.error(pod_name_tmp)
+        if pod_name_tmp == pod_name:
+            continue
+        elif pod_name_tmp.find(helm_release_name) == -1 or pod_name_tmp.find("mysql") != -1:
+            continue
+        else:
+            status_res = v1.read_namespaced_pod_status(pod_name_tmp, namespace, pretty='true')
+            logger.error(status_res.status.phase)
+            start_time = time.time()
+            ready_break = False
+            while time.time() - start_time <= timeout:
+                logger.error(time.time())
                 status_res = v1.read_namespaced_pod_status(pod_name_tmp, namespace, pretty='true')
-                logger.error(status_res.status.phase)
-                start_time = time.time()
-                ready_break = False
-                while time.time() - start_time <= timeout:
-                    logger.error(time.time())
-                    status_res = v1.read_namespaced_pod_status(pod_name_tmp, namespace, pretty='true')
-                    if status_res.status.phase == "Running":
-                        logger.error("Already running")
-                        ready_break = True
-                        break
-                    else:
-                        time.sleep(5)
-                if time.time() - start_time > timeout:
-                    logger.error("Restart pod: %s timeout" % pod_name_tmp)
-                    res = False
-                    return res
-                if ready_break:
+                if status_res.status.phase == "Running":
+                    logger.error("Already running")
+                    ready_break = True
                     break
-    else:
-        raise Exception("Pod: %s not found" % pod_name)
+                else:
+                    time.sleep(5)
+            if time.time() - start_time > timeout:
+                logger.error(f"Restart pod: {pod_name_tmp} timeout")
+                res = False
+                return res
+            if ready_break:
+                break
     follow = True
     pretty = True
     previous = True  # bool | Return previous terminated container logs. Defaults to false. (optional)
@@ -429,7 +420,7 @@ def get_pod_status(helm_release_name, namespace):
     config.load_kube_config()
     v1 = client.CoreV1Api()
     pod_status = []
-    label_selector = 'app.kubernetes.io/instance={}'.format(helm_release_name)
+    label_selector = f'app.kubernetes.io/instance={helm_release_name}'
     # pods = v1.list_namespaced_pod(namespace, label_selector=label_selector)
     pods = v1.list_namespaced_pod(namespace)
     for i in pods.items:
@@ -443,10 +434,7 @@ def get_pod_status(helm_release_name, namespace):
 
 def running_status(helm_release_name, namespace):
     pod_status = get_pod_status(helm_release_name, namespace)
-    for pod in pod_status:
-        if pod["status"] != "Running":
-            return False
-    return True
+    return all(pod["status"] == "Running" for pod in pod_status)
 
 
 if __name__ == '__main__':
@@ -456,10 +444,7 @@ if __name__ == '__main__':
         # st = get_pod_status(helm_release_name, namespace)
         status = get_pod_status(helm_release_name, namespace)
         print(status)
-        for s in status:
-            if s["status"] != "Runningk":
-                return False
-        return True
+        return all(s["status"] == "Runningk" for s in status)
 
 
     def fff():

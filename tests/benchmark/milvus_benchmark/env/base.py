@@ -15,7 +15,6 @@ class BaseEnv(object):
 
     def start_up(self, **kwargs):
         logger.debug("IN ENV CLASS")
-        pass
 
     def tear_down(self):
         pass

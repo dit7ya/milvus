@@ -1,4 +1,5 @@
 """ Initialized parameters """
+
 port = 19530
 epsilon = 0.000001
 namespace = "milvus"
@@ -83,7 +84,9 @@ get_invalid_strs = [
     "(mn)",
     "中文",
     "%$#",
-    "a".join("a" for i in range(256))]
+    "a".join("a" for _ in range(256)),
+]
+
 
 get_not_string = [
     [],
@@ -110,8 +113,9 @@ get_invalid_vectors = [
     "String",
     " siede ",
     "中文",
-    "a".join("a" for i in range(256))
+    "a".join("a" for _ in range(256)),
 ]
+
 
 get_invalid_ints = [
     9999999999,
@@ -124,8 +128,9 @@ get_invalid_ints = [
     "String",
     "=c",
     "中文",
-    "a".join("a" for i in range(256))
+    "a".join("a" for _ in range(256)),
 ]
+
 
 get_invalid_dict = [
     [],
@@ -139,8 +144,9 @@ get_invalid_dict = [
     {1: 1},
     {"中文": 1},
     {"%$#": ["a"]},
-    {"a".join("a" for i in range(256)): "a"}
+    {"a".join("a" for _ in range(256)): "a"},
 ]
+
 
 get_dict_without_host_port = [
     {"host": "host"},

@@ -16,7 +16,7 @@ namespace = 'chaos-testing'
 
 
 def _install_milvus(seg_size):
-    release_name = f"mil-segsize-{seg_size}-" + cf.gen_digits_by_length(6)
+    release_name = f"mil-segsize-{seg_size}-{cf.gen_digits_by_length(6)}"
     cus_configs = {'spec.components.image': 'milvusdb/milvus:master-latest',
                    'metadata.namespace': namespace,
                    'metadata.name': release_name,
@@ -41,7 +41,6 @@ def _install_milvus(seg_size):
 class TestCustomizeSegmentSize:
 
     def teardown_method(self):
-        pass
         milvus_op = MilvusOperator()
         milvus_op.uninstall(self.release_name, namespace)
         connections.disconnect("default")

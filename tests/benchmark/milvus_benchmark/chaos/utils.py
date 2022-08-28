@@ -27,12 +27,7 @@ def list_pod_for_namespace(label_selector="app.kubernetes.io/instance=zong-stand
     config.load_kube_config()
     v1 = client.CoreV1Api()
     ret = v1.list_namespaced_pod(namespace=cf.NAMESPACE, label_selector=label_selector)
-    pods = []
-    # label_selector = 'release=zong-single'
-    for i in ret.items:
-        pods.append(i.metadata.name)
-        # print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
-    return pods
+    return [i.metadata.name for i in ret.items]
 
 
 def assert_fail(func, milvus_client, **params):
@@ -41,7 +36,6 @@ def assert_fail(func, milvus_client, **params):
     except Exception as e:
         logger.debug("11111111111111111111111111")
         logger.info(str(e))
-        pass
     else:
         raise Exception("fail-assert failed")
 

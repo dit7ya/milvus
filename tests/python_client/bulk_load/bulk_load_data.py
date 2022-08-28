@@ -37,25 +37,18 @@ class DataErrorType:
 
 def gen_file_prefix(row_based=True, auto_id=True, prefix=""):
     if row_based:
-        if auto_id:
-            return f"{prefix}_row_auto"
-        else:
-            return f"{prefix}_row_cust"
+        return f"{prefix}_row_auto" if auto_id else f"{prefix}_row_cust"
     else:
-        if auto_id:
-            return f"{prefix}_col_auto"
-        else:
-            return f"{prefix}_col_cust"
+        return f"{prefix}_col_auto" if auto_id else f"{prefix}_col_cust"
 
 
 def entity_suffix(rows):
     if rows // 1000000 > 0:
-        suffix = f"{rows // 1000000}m"
+        return f"{rows // 1000000}m"
     elif rows // 1000 > 0:
-        suffix = f"{rows // 1000}k"
+        return f"{rows // 1000}k"
     else:
-        suffix = f"{rows}"
-    return suffix
+        return f"{rows}"
 
 
 def gen_float_vectors(nb, dim):
@@ -65,15 +58,11 @@ def gen_float_vectors(nb, dim):
 
 
 def gen_str_invalid_vectors(nb, dim):
-    vectors = [[str(gen_unique_str()) for _ in range(dim)] for _ in range(nb)]
-    return vectors
+    return [[str(gen_unique_str()) for _ in range(dim)] for _ in range(nb)]
 
 
 def gen_binary_vectors(nb, dim):
-    # binary: each int presents 8 dimension
-    # so if binary vector dimension is 16，use [x, y], which x and y could be any int between 0 to 255
-    vectors = [[random.randint(0, 255) for _ in range(dim)] for _ in range(nb)]
-    return vectors
+    return [[random.randint(0, 255) for _ in range(dim)] for _ in range(nb)]
 
 
 def gen_row_based_json_file(row_file, str_pk, data_fields, float_vect,
@@ -102,11 +91,10 @@ def gen_row_based_json_file(row_file, str_pk, data_fields, float_vect,
                 if data_field == DataField.pk_field:
                     if str_pk:
                         f.write('"uid":"' + str(gen_unique_str()) + '"')
+                    elif err_type == DataErrorType.float_on_int_pk:
+                        f.write('"uid":' + str(i + start_uid + random.random()) + '')
                     else:
-                        if err_type == DataErrorType.float_on_int_pk:
-                            f.write('"uid":' + str(i + start_uid + random.random()) + '')
-                        else:
-                            f.write('"uid":' + str(i + start_uid) + '')
+                        f.write('"uid":' + str(i + start_uid) + '')
                 if data_field == DataField.int_field:
                     if DataField.pk_field in data_fields:
                         # if not auto_id, use the same value as pk to check the query results later
@@ -161,45 +149,139 @@ def gen_column_base_json_file(col_file, str_pk, data_fields, float_vect,
                 data_field = data_fields[j]
                 if data_field == DataField.pk_field:
                     if str_pk:
-                        f.write('"uid":["' + ',"'.join(str(gen_unique_str()) + '"' for i in range(rows)) + ']')
-                        f.write("\n")
+                        f.write(
+                            '"uid":["'
+                            + ',"'.join(
+                                str(gen_unique_str()) + '"'
+                                for _ in range(rows)
+                            )
+                            + ']'
+                        )
+
+                    elif err_type == DataErrorType.float_on_int_pk:
+                        f.write('"uid":[' + ",".join(
+                            str(i + random.random()) for i in range(start_uid, start_uid + rows)) + "]")
                     else:
-                        if err_type == DataErrorType.float_on_int_pk:
-                            f.write('"uid":[' + ",".join(
-                                str(i + random.random()) for i in range(start_uid, start_uid + rows)) + "]")
-                        else:
-                            f.write('"uid":[' + ",".join(str(i) for i in range(start_uid, start_uid + rows)) + "]")
-                        f.write("\n")
+                        f.write('"uid":[' + ",".join(str(i) for i in range(start_uid, start_uid + rows)) + "]")
+                    f.write("\n")
                 if data_field == DataField.int_field:
                     if DataField.pk_field in data_fields:
                         # if not auto_id, use the same value as pk to check the query results later
                         f.write('"int_scalar":[' + ",".join(str(i) for i in range(start_uid, start_uid + rows)) + "]")
                     else:
-                        f.write('"int_scalar":[' + ",".join(str(
-                            random.randint(-999999, 9999999)) for i in range(rows)) + "]")
+                        f.write(
+                            (
+                                (
+                                    '"int_scalar":['
+                                    + ",".join(
+                                        str(random.randint(-999999, 9999999))
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + "]"
+                            )
+                        )
+
                     f.write("\n")
                 if data_field == DataField.float_field:
                     if err_type == DataErrorType.int_on_float_scalar:
-                        f.write('"float_scalar":[' + ",".join(
-                            str(random.randint(-999999, 9999999)) for i in range(rows)) + "]")
+                        f.write(
+                            (
+                                (
+                                    '"float_scalar":['
+                                    + ",".join(
+                                        str(random.randint(-999999, 9999999))
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + "]"
+                            )
+                        )
+
                     elif err_type == DataErrorType.str_on_float_scalar:
-                        f.write('"float_scalar":["' + ',"'.join(str(
-                            gen_unique_str()) + '"' for i in range(rows)) + ']')
+                        f.write(
+                            (
+                                (
+                                    '"float_scalar":["'
+                                    + ',"'.join(
+                                        str(gen_unique_str()) + '"'
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + ']'
+                            )
+                        )
+
                     else:
-                        f.write('"float_scalar":[' + ",".join(
-                            str(random.random()) for i in range(rows)) + "]")
+                        f.write(
+                            (
+                                (
+                                    '"float_scalar":['
+                                    + ",".join(
+                                        str(random.random())
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + "]"
+                            )
+                        )
+
                     f.write("\n")
                 if data_field == DataField.string_field:
-                    f.write('"string_scalar":["' + ',"'.join(str(
-                        gen_unique_str()) + '"' for i in range(rows)) + ']')
+                    f.write(
+                        (
+                            (
+                                '"string_scalar":["'
+                                + ',"'.join(
+                                    str(gen_unique_str()) + '"'
+                                    for _ in range(rows)
+                                )
+                            )
+                            + ']'
+                        )
+                    )
+
                     f.write("\n")
                 if data_field == DataField.bool_field:
                     if err_type == DataErrorType.typo_on_bool:
-                        f.write('"bool_scalar":[' + ",".join(
-                            str(random.choice(["True", "False", "TRUE", "FALSE", "1", "0"])) for i in range(rows)) + "]")
+                        f.write(
+                            (
+                                (
+                                    '"bool_scalar":['
+                                    + ",".join(
+                                        str(
+                                            random.choice(
+                                                [
+                                                    "True",
+                                                    "False",
+                                                    "TRUE",
+                                                    "FALSE",
+                                                    "1",
+                                                    "0",
+                                                ]
+                                            )
+                                        )
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + "]"
+                            )
+                        )
+
                     else:
-                        f.write('"bool_scalar":[' + ",".join(
-                            str(random.choice(["true", "false"])) for i in range(rows)) + "]")
+                        f.write(
+                            (
+                                (
+                                    '"bool_scalar":['
+                                    + ",".join(
+                                        str(random.choice(["true", "false"]))
+                                        for _ in range(rows)
+                                    )
+                                )
+                                + "]"
+                            )
+                        )
+
                     f.write("\n")
                 if data_field == DataField.vec_field:
                     # vector columns
@@ -271,7 +353,7 @@ def gen_int_or_float_in_numpy_file(dir, data_field, rows, start=0, force=False):
             if data_field == DataField.float_field:
                 data = [random.random() for _ in range(rows)]
             elif data_field == DataField.pk_field:
-                data = [i for i in range(start, start + rows)]
+                data = list(range(start, start + rows))
             elif data_field == DataField.int_field:
                 data = [random.randint(-999999, 9999999) for _ in range(rows)]
         arr = np.array(data)
@@ -294,13 +376,10 @@ def gen_file_name(row_based, rows, dim, auto_id, str_pk,
     if DataField.vec_field in data_fields:
         vt = "float_vectors_" if float_vector else "binary_vectors_"
 
-    pk = ""
-    if str_pk:
-        pk = "str_pk_"
+    pk = "str_pk_" if str_pk else ""
     prefix = gen_file_prefix(row_based=row_based, auto_id=auto_id, prefix=err_type)
 
-    file_name = f"{prefix}_{pk}{vt}{field_suffix}{dim}d_{row_suffix}_{file_num}{file_type}"
-    return file_name
+    return f"{prefix}_{pk}{vt}{field_suffix}{dim}d_{row_suffix}_{file_num}{file_type}"
 
 
 def gen_subfolder(root, dim, rows, file_num):

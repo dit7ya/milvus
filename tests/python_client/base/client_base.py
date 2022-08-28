@@ -34,7 +34,7 @@ class Base:
 
     def setup_method(self, method):
         log.info(("*" * 35) + " setup " + ("*" * 35))
-        log.info("[setup_method] Start setup test case %s." % method.__name__)
+        log.info(f"[setup_method] Start setup test case {method.__name__}.")
         self.connection_wrap = ApiConnectionsWrapper()
         self.utility_wrap = ApiUtilityWrapper()
         self.collection_wrap = ApiCollectionWrapper()
@@ -45,7 +45,7 @@ class Base:
 
     def teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
-        log.info("[teardown_method] Start teardown test case %s..." % method.__name__)
+        log.info(f"[teardown_method] Start teardown test case {method.__name__}...")
 
         try:
             """ Drop collection before disconnect """
@@ -163,7 +163,7 @@ class TestcaseBase(Base):
         # 3 insert data if specified
         if insert_data:
             collection_w, vectors, binary_raw_vectors, insert_ids, time_stamp = \
-                cf.insert_data(collection_w, nb, is_binary, is_all_data_type, auto_id=auto_id, dim=dim)
+                    cf.insert_data(collection_w, nb, is_binary, is_all_data_type, auto_id=auto_id, dim=dim)
             if is_flush:
                 assert collection_w.is_empty is False
                 assert collection_w.num_entities == nb

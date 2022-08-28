@@ -67,7 +67,7 @@ class TestAutoLoadBalance(object):
         """
 
         """
-        log.info(f"start to install milvus")
+        log.info("start to install milvus")
         release_name, host, port = install_milvus("test-auto-load-balance")  # todo add release name
         self.release_name = release_name
         assert host is not None

@@ -31,8 +31,7 @@ class TestActionFirstDeployment(TestDeployBase):
 
     def teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
-        log.info("[teardown_method] Start teardown test case %s..." %
-                 method.__name__)
+        log.info(f"[teardown_method] Start teardown test case {method.__name__}...")
         log.info("skip drop collection")
 
     @pytest.mark.tags(CaseLabel.L3)
@@ -41,15 +40,12 @@ class TestActionFirstDeployment(TestDeployBase):
         """
         before reinstall: create collection
         """
-        name = ""
-        for k,v in locals().items():
-            if k in ["self", "name"]:
-                continue
-            name += f"_{k}_{v}"
+        name = "".join(
+            f"_{k}_{v}" for k, v in locals().items() if k not in ["self", "name"]
+        )
+
         name = prefix + name + "_" + "empty"
-        is_binary = False
-        if "BIN" in name:
-            is_binary = True
+        is_binary = "BIN" in name
         self.init_collection_general(insert_data=False, is_binary=is_binary, name=name)[0]
 
 
@@ -66,11 +62,10 @@ class TestActionFirstDeployment(TestDeployBase):
         """
         before reinstall: create collection and insert data, load and search
         """
-        name = ""
-        for k,v in locals().items():
-            if k in ["self", "name"]:
-                continue
-            name += f"_{k}_{v}"
+        name = "".join(
+            f"_{k}_{v}" for k, v in locals().items() if k not in ["self", "name"]
+        )
+
         name = prefix + name
         log.info(f"collection name: {name}")
         self._connect()
@@ -84,7 +79,7 @@ class TestActionFirstDeployment(TestDeployBase):
                  f"is_deleted: {is_deleted}, is_vector_indexed: {is_vector_indexed}, is_string_indexed: {is_string_indexed},"
                  f"segment_status: {segment_status}, index_type: {index_type}")
 
-        is_binary = True if "BIN" in index_type else False
+        is_binary = "BIN" in index_type
 
         # params for search and query
         if is_binary:
@@ -109,7 +104,7 @@ class TestActionFirstDeployment(TestDeployBase):
             collection_w.load(replica_number=replica_number)
 
         # delete data for growing segment
-        delete_expr = f"{ct.default_int64_field_name} in {[i for i in range(0,10)]}"
+        delete_expr = f"{ct.default_int64_field_name} in {list(range(10))}"
         if is_deleted == "is_deleted":
             collection_w.delete(expr=delete_expr)
 
@@ -130,15 +125,15 @@ class TestActionFirstDeployment(TestDeployBase):
             pytest.skip(
                 "already get growing segment, skip subsequent operations")
         # insert with flush multiple times to generate multiple sealed segment
-        for i in range(5):
+        for _ in range(5):
             self.init_collection_general(insert_data=True, is_binary=is_binary, nb=data_size,
                                          is_flush=False, is_index=True, name=name)
             # at this step, all segment are sealed
             collection_w.flush()
         # delete data for sealed segment and before index
-        delete_expr = f"{ct.default_int64_field_name} in {[i for i in range(10,20)]}"
+        delete_expr = f"{ct.default_int64_field_name} in {list(range(10, 20))}"
         if is_deleted == "is_deleted":
-            collection_w.delete(expr=delete_expr)       
+            collection_w.delete(expr=delete_expr)
         # params for creating index
         if is_binary:
             default_index_field = ct.default_binary_vec_field_name
@@ -158,7 +153,7 @@ class TestActionFirstDeployment(TestDeployBase):
                 default_string_field_name, default_string_index_params, index_name=default_string_index_name)
 
         # delete data for sealed segment and afer index
-        delete_expr = f"{ct.default_int64_field_name} in {[i for i in range(20,30)]}"
+        delete_expr = f"{ct.default_int64_field_name} in {list(range(20, 30))}"
         if is_deleted == "is_deleted":
             collection_w.delete(expr=delete_expr)
         if is_compacted == "is_compacted":
@@ -176,7 +171,7 @@ class TestActionFirstDeployment(TestDeployBase):
         if segment_status == "all":
             self.init_collection_general(insert_data=True, is_binary=is_binary, nb=3000,
                                          is_flush=False, is_index=True, name=name)
-        
+
         # search and query for sealed and growing segment
         if replica_number > 0:
             collection_w.search(vectors_to_search[:default_nq], default_search_field,

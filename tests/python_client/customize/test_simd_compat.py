@@ -23,7 +23,7 @@ namespace = 'chaos-testing'
 
 
 def _install_milvus(simd):
-    release_name = f"mil-{simd.replace('_','-')}-" + cf.gen_digits_by_length(6)
+    release_name = f"mil-{simd.replace('_', '-')}-{cf.gen_digits_by_length(6)}"
     cus_configs = {'spec.components.image': 'milvusdb/milvus:master-latest',
                    'metadata.namespace': namespace,
                    'metadata.name': release_name,
@@ -52,7 +52,7 @@ class TestSimdCompatibility:
         milvus_op.uninstall(self.release_name, namespace)
 
     @pytest.mark.tags(CaseLabel.L3)
-    @pytest.mark.parametrize('simd_id', [i for i in range(len(supported_simd_types))])
+    @pytest.mark.parametrize('simd_id', list(range(len(supported_simd_types))))
     def test_simd_compat_e2e(self, simd_id):
         """
        steps

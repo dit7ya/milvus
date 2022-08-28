@@ -12,14 +12,13 @@ class TestAllCollection(TestcaseBase):
     """ Test case of end to end"""
     @pytest.fixture(scope="function", params=get_collections())
     def collection_name(self, request):
-        if request.param == [] or request.param == "":
+        if request.param in [[], ""]:
             pytest.skip("The collection name is invalid")
         yield request.param
 
     def teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
-        log.info("[teardown_method] Start teardown test case %s..." %
-                 method.__name__)
+        log.info(f"[teardown_method] Start teardown test case {method.__name__}...")
         log.info("skip drop collection")
 
 

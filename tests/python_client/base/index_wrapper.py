@@ -17,8 +17,8 @@ class ApiIndexWrapper:
         timeout = kwargs.get("timeout", TIMEOUT * 2)
         index_name =  INDEX_NAME if index_name is None else index_name
         index_name =  kwargs.get("index_name", index_name)
-        kwargs.update({"timeout": timeout, "index_name": index_name})
-        
+        kwargs |= {"timeout": timeout, "index_name": index_name}
+
         """ In order to distinguish the same name of index """
         func_name = sys._getframe().f_code.co_name
         res, is_succ = api_request([Index, collection, field_name, index_params], **kwargs)
@@ -32,7 +32,7 @@ class ApiIndexWrapper:
         timeout = kwargs.get("timeout", TIMEOUT)
         index_name =  INDEX_NAME if index_name is None else index_name
         index_name = kwargs.get("index_name", index_name)
-        kwargs.update({"timeout": timeout, "index_name": index_name})
+        kwargs |= {"timeout": timeout, "index_name": index_name}
 
         func_name = sys._getframe().f_code.co_name
         res, is_succ = api_request([self.index.drop], **kwargs)

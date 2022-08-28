@@ -19,11 +19,7 @@ NUM_REPLICAS = 2
 
 def filter_collections_by_prefix(prefix):
     col_list = list_collections()
-    res = []
-    for col in col_list:
-        if col.startswith(prefix):
-            res.append(col)
-    return res
+    return [col for col in col_list if col.startswith(prefix)]
 
 
 def gen_search_param(index_type, metric_type="L2"):
@@ -82,7 +78,7 @@ def create_collections_and_insert_data(prefix, flush=True, count=3000, collectio
     for index_name in all_index_types[:collection_cnt]:
         print("\nCreate collection...")
         col_name = prefix + index_name
-        collection = Collection(name=col_name, schema=default_schema) 
+        collection = Collection(name=col_name, schema=default_schema)
         print(f"collection name: {col_name}")
         print(f"begin insert, count: {count} nb: {nb}")
         times = int(count // nb)
@@ -92,11 +88,12 @@ def create_collections_and_insert_data(prefix, flush=True, count=3000, collectio
             start_time = time.time()
             collection.insert(
                 [
-                    [i for i in range(nb * j, nb * j + nb)],
+                    list(range(nb * j, nb * j + nb)),
                     [float(random.randrange(-20, -10)) for _ in range(nb)],
-                    vectors[nb*j:nb*j+nb]
+                    vectors[nb * j : nb * j + nb],
                 ]
             )
+
             end_time = time.time()
             print(f"[{j+1}/{times}] insert {nb} data, time: {end_time - start_time:.4f}")
             total_time += end_time - start_time

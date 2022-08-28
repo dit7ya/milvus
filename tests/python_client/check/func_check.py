@@ -19,9 +19,7 @@ class ResponseChecker:
         self.check_items = check_items  # check items and expectations that to be checked in check task
         self.succ = is_succ  # api responses successful or not
 
-        self.kwargs_dict = {}  # not used for now, just for extension
-        for key, value in kwargs.items():
-            self.kwargs_dict[key] = value
+        self.kwargs_dict = dict(kwargs)
         self.keys = self.kwargs_dict.keys()
 
     def run(self):
@@ -63,9 +61,6 @@ class ResponseChecker:
         elif self.check_task == CheckTasks.check_query_empty:
             result = self.check_query_empty(self.response, self.func_name)
 
-        elif self.check_task == CheckTasks.check_query_empty:
-            result = self.check_query_not_empty(self.response, self.func_name)
-
         elif self.check_task == CheckTasks.check_distance:
             # Calculate distance interface that response check
             result = self.check_distance(self.response, self.func_name, self.check_items)
@@ -97,7 +92,7 @@ class ResponseChecker:
             error_code = error_dict[ct.err_code]
             assert res.code == error_code or error_dict[ct.err_msg] in res.message
         else:
-            log.error("[CheckFunc] Response of API is not an error: %s" % str(res))
+            log.error(f"[CheckFunc] Response of API is not an error: {str(res)}")
             assert False
         return True
 
@@ -107,12 +102,18 @@ class ResponseChecker:
 
         if func_name == "list_connections":
             if not isinstance(res, list):
-                log.error("[CheckFunc] Response of list_connections is not a list: %s" % str(res))
+                log.error(
+                    f"[CheckFunc] Response of list_connections is not a list: {str(res)}"
+                )
+
                 assert False
 
             list_content = params.get(ct.list_content, None)
             if not isinstance(list_content, list):
-                log.error("[CheckFunc] Check param of list_content is not a list: %s" % str(list_content))
+                log.error(
+                    f"[CheckFunc] Check param of list_content is not a list: {str(list_content)}"
+                )
+
                 assert False
 
             new_res = pc.get_connect_object_name(res)
@@ -149,8 +150,8 @@ class ResponseChecker:
         """
         exp_func_name = "init_collection"
         exp_func_name_2 = "construct_from_dataframe"
-        if func_name != exp_func_name and func_name != exp_func_name_2:
-            log.warning("The function name is {} rather than {}".format(func_name, exp_func_name))
+        if func_name not in [exp_func_name, exp_func_name_2]:
+            log.warning(f"The function name is {func_name} rather than {exp_func_name}")
         if isinstance(res, Collection):
             collection = res
         elif isinstance(res, tuple):
@@ -178,7 +179,7 @@ class ResponseChecker:
     def check_partition_property(partition, func_name, check_items):
         exp_func_name = "init_partition"
         if func_name != exp_func_name:
-            log.warning("The function name is {} rather than {}".format(func_name, exp_func_name))
+            log.warning(f"The function name is {func_name} rather than {exp_func_name}")
         if not isinstance(partition, Partition):
             raise Exception("The result to check isn't partition type object")
         if len(check_items) == 0:
@@ -204,13 +205,12 @@ class ResponseChecker:
         """
         log.info("search_results_check: checking the searching results")
         if func_name != 'search':
-            log.warning("The function name is {} rather than {}".format(func_name, "search"))
+            log.warning(f"The function name is {func_name} rather than search")
         if len(check_items) == 0:
             raise Exception("No expect values found in the check task")
-        if check_items.get("_async", None):
-            if check_items["_async"]:
-                search_res.done()
-                search_res = search_res.result()
+        if check_items.get("_async", None) and check_items["_async"]:
+            search_res.done()
+            search_res = search_res.result()
         if len(search_res) != check_items["nq"]:
             log.error("search_results_check: Numbers of query searched (%d) "
                       "is not equal with expected (%d)"
@@ -220,21 +220,18 @@ class ResponseChecker:
             log.info("search_results_check: Numbers of query searched is correct")
         for hits in search_res:
             if (len(hits) != check_items["limit"]) \
-                    or (len(hits.ids) != check_items["limit"]):
+                        or (len(hits.ids) != check_items["limit"]):
                 log.error("search_results_check: limit(topK) searched (%d) "
                           "is not equal with expected (%d)"
                           % (len(hits), check_items["limit"]))
                 assert len(hits) == check_items["limit"]
                 assert len(hits.ids) == check_items["limit"]
-            else:
-                if check_items.get("ids", None) is not None:
-                    ids_match = pc.list_contain_check(list(hits.ids),
-                                                      list(check_items["ids"]))
-                    if not ids_match:
-                        log.error("search_results_check: ids searched not match")
-                        assert ids_match
-                else:
-                    pass    # just check nq and topk, not specific ids need check
+            elif check_items.get("ids", None) is not None:
+                ids_match = pc.list_contain_check(list(hits.ids),
+                                                  list(check_items["ids"]))
+                if not ids_match:
+                    log.error("search_results_check: ids searched not match")
+                    assert ids_match
         log.info("search_results_check: limit (topK) and "
                  "ids searched for %d queries are correct" % len(search_res))
         return True
@@ -256,7 +253,7 @@ class ResponseChecker:
         :type check_items: dict
         """
         if func_name != 'query':
-            log.warning("The function name is {} rather than {}".format(func_name, "query"))
+            log.warning(f"The function name is {func_name} rather than query")
         if not isinstance(query_res, list):
             raise Exception("The query result to check isn't list type object")
         if len(check_items) == 0:
@@ -285,7 +282,7 @@ class ResponseChecker:
         :type func_name: str
         """
         if func_name != 'query':
-            log.warning("The function name is {} rather than {}".format(func_name, "query"))
+            log.warning(f"The function name is {func_name} rather than query")
         if not isinstance(query_res, list):
             raise Exception("The query result to check isn't list type object")
         assert len(query_res) == 0, "Query result is not empty"
@@ -302,7 +299,7 @@ class ResponseChecker:
         :type func_name: str
         """
         if func_name != 'query':
-            log.warning("The function name is {} rather than {}".format(func_name, "query"))
+            log.warning(f"The function name is {func_name} rather than query")
         if not isinstance(query_res, list):
             raise Exception("The query result to check isn't list type object")
         assert len(query_res) > 0
@@ -310,7 +307,7 @@ class ResponseChecker:
     @staticmethod
     def check_distance(distance_res, func_name, check_items):
         if func_name != 'calc_distance':
-            log.warning("The function name is {} rather than {}".format(func_name, "calc_distance"))
+            log.warning(f"The function name is {func_name} rather than calc_distance")
         if not isinstance(distance_res, list):
             raise Exception("The distance result to check isn't list type object")
         if len(check_items) == 0:
@@ -342,7 +339,7 @@ class ResponseChecker:
         """
         to_check_func = 'get_compaction_plans'
         if func_name != to_check_func:
-            log.warning("The function name is {} rather than {}".format(func_name, to_check_func))
+            log.warning(f"The function name is {func_name} rather than {to_check_func}")
         if not isinstance(compaction_plans, CompactionPlans):
             raise Exception("The compaction_plans result to check isn't CompactionPlans type object")
 
@@ -369,7 +366,7 @@ class ResponseChecker:
         """
         to_check_func = 'get_compaction_plans'
         if func_name != to_check_func:
-            log.warning("The function name is {} rather than {}".format(func_name, to_check_func))
+            log.warning(f"The function name is {func_name} rather than {to_check_func}")
         if not isinstance(compaction_plans, CompactionPlans):
             raise Exception("The compaction_plans result to check isn't CompactionPlans type object")
 
@@ -382,7 +379,7 @@ class ResponseChecker:
     def check_role_property(role, func_name, check_items):
         exp_func_name = "create_role"
         if func_name != exp_func_name:
-            log.warning("The function name is {} rather than {}".format(func_name, exp_func_name))
+            log.warning(f"The function name is {func_name} rather than {exp_func_name}")
         if not isinstance(role, Role):
             raise Exception("The result to check isn't role type object")
         if check_items is None:

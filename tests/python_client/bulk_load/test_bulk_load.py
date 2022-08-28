@@ -19,12 +19,11 @@ default_vec_n_int_fields = [df.vec_field, df.int_field]
 
 def entity_suffix(entities):
     if entities // 1000000 > 0:
-        suffix = f"{entities // 1000000}m"
+        return f"{entities // 1000000}m"
     elif entities // 1000 > 0:
-        suffix = f"{entities // 1000}k"
+        return f"{entities // 1000}k"
     else:
-        suffix = f"{entities}"
-    return suffix
+        return f"{entities}"
 
 
 class TestBulkLoad(TestcaseBase):
@@ -194,7 +193,7 @@ class TestBulkLoad(TestcaseBase):
                                                   files=files)
         logging.info(f"bulk load task ids:{task_ids}")
         success, state = self.utility_wrap.\
-            wait_for_bulk_load_tasks_completed(task_ids=task_ids,
+                wait_for_bulk_load_tasks_completed(task_ids=task_ids,
                                                target_state=BulkLoadStates.BulkLoadDataQueryable,
                                                timeout=30)
         tt = time.time() - t0

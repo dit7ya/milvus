@@ -37,9 +37,7 @@ def search_test(host="127.0.0.1"):
     print(f"search cost  {t1 - t0:.4f} seconds")
     result_ids = []
     for hits in res:
-        result_id = []
-        for hit in hits:
-            result_id.append(hit.entity.get("int64"))
+        result_id = [hit.entity.get("int64") for hit in hits]
         result_ids.append(result_id)
 
     # calculate recall

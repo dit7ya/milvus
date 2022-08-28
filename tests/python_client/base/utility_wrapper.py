@@ -40,47 +40,43 @@ class ApiUtilityWrapper:
         start = time.time()
         successes = {}
         fails = {}
-        if timeout is not None:
-            task_timeout = timeout / len(task_ids)
-        else:
-            task_timeout = TIMEOUT
+        task_timeout = timeout / len(task_ids) if timeout is not None else TIMEOUT
         while (len(successes) + len(fails)) < len(task_ids):
             in_progress = {}
             time.sleep(0.1)
             for task_id in task_ids:
-                if successes.get(task_id, None) is not None or fails.get(task_id, None) is not None:
+                if (
+                    successes.get(task_id, None) is not None
+                    or fails.get(task_id, None) is not None
+                ):
                     continue
-                else:
-                    state, _ = self.get_bulk_load_state(task_id, task_timeout, using, **kwargs)
-                    if target_state == BulkLoadStates.BulkLoadDataQueryable:
-                        if state.data_queryable is True:
-                            successes[task_id] = True
-                        else:
-                            in_progress[task_id] = False
-                    elif target_state == BulkLoadStates.BulkLoadDataIndexed:
-                        if state.data_indexed is True:
-                            successes[task_id] = True
-                        else:
-                            in_progress[task_id] = False
+                state, _ = self.get_bulk_load_state(task_id, task_timeout, using, **kwargs)
+                if target_state == BulkLoadStates.BulkLoadDataQueryable:
+                    if state.data_queryable is True:
+                        successes[task_id] = True
                     else:
-                        if state.state_name == target_state:
-                            successes[task_id] = state
-                        elif state.state_name == BulkLoadStates.BulkLoadFailed:
-                            fails[task_id] = state
-                        else:
-                            in_progress[task_id] = state
+                        in_progress[task_id] = False
+                elif target_state == BulkLoadStates.BulkLoadDataIndexed:
+                    if state.data_indexed is True:
+                        successes[task_id] = True
+                    else:
+                        in_progress[task_id] = False
+                elif state.state_name == target_state:
+                    successes[task_id] = state
+                elif state.state_name == BulkLoadStates.BulkLoadFailed:
+                    fails[task_id] = state
+                else:
+                    in_progress[task_id] = state
             end = time.time()
-            if timeout is not None:
-                if end - start > timeout:
-                    in_progress.update(fails)
-                    in_progress.update(successes)
-                    return False, in_progress
+            if timeout is not None and end - start > timeout:
+                in_progress |= fails
+                in_progress |= successes
+                return False, in_progress
 
-        if len(fails) == 0:
+        if not fails:
             return True, successes
-        else:
-            fails.update(successes)
-            return False, fails
+        fails |= successes
+        return False, fails
 
     def get_query_segment_info(self, collection_name, timeout=None, using="default", check_task=None, check_items=None):
         timeout = TIMEOUT if timeout is None else timeout

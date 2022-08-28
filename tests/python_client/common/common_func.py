@@ -39,7 +39,7 @@ param_info = ParamInfo()
 
 def gen_unique_str(str_value=None):
     prefix = "".join(random.choice(string.ascii_letters + string.digits) for _ in range(8))
-    return "test_" + prefix if str_value is None else str_value + "_" + prefix
+    return f"test_{prefix}" if str_value is None else str_value + "_" + prefix
 
 
 def gen_str_by_length(length=8):
@@ -193,8 +193,7 @@ def gen_vectors(nb, dim):
 
 
 def gen_string(nb):
-    string_values = [str(random.random()) for _ in range(nb)]
-    return string_values
+    return [str(random.random()) for _ in range(nb)]
 
 
 def gen_binary_vectors(num, dim):
@@ -209,17 +208,18 @@ def gen_binary_vectors(num, dim):
 
 
 def gen_default_dataframe_data(nb=ct.default_nb, dim=ct.default_dim, start=0):
-    int_values = pd.Series(data=[i for i in range(start, start + nb)])
+    int_values = pd.Series(data=list(range(start, start + nb)))
     float_values = pd.Series(data=[np.float32(i) for i in range(start, start + nb)], dtype="float32")
     string_values = pd.Series(data=[str(i) for i in range(start, start + nb)], dtype="string")
     float_vec_values = gen_vectors(nb, dim)
-    df = pd.DataFrame({
-        ct.default_int64_field_name: int_values,
-        ct.default_float_field_name: float_values,
-        ct.default_string_field_name: string_values,
-        ct.default_float_vec_field_name: float_vec_values
-    })
-    return df
+    return pd.DataFrame(
+        {
+            ct.default_int64_field_name: int_values,
+            ct.default_float_field_name: float_values,
+            ct.default_string_field_name: string_values,
+            ct.default_float_vec_field_name: float_vec_values,
+        }
+    )
 
 
 def gen_dataframe_multi_vec_fields(vec_fields, nb=ct.default_nb):
@@ -229,7 +229,7 @@ def gen_dataframe_multi_vec_fields(vec_fields, nb=ct.default_nb):
     :param vec_fields: list of FieldSchema
     :return: dataframe
     """
-    int_values = pd.Series(data=[i for i in range(0, nb)])
+    int_values = pd.Series(data=list(range(nb)))
     float_values = pd.Series(data=[float(i) for i in range(nb)], dtype="float32")
     string_values = pd.Series(data=[str(i) for i in range(nb)], dtype="string")
     df = pd.DataFrame({
@@ -255,7 +255,7 @@ def gen_dataframe_multi_string_fields(string_fields, nb=ct.default_nb):
     :param vec_fields: list of FieldSchema
     :return: dataframe
     """
-    int_values = pd.Series(data=[i for i in range(0, nb)])
+    int_values = pd.Series(data=list(range(nb)))
     float_values = pd.Series(data=[float(i) for i in range(nb)], dtype="float32")
     string_values = pd.Series(data=[str(i) for i in range(nb)], dtype="string")
     df = pd.DataFrame({
@@ -272,7 +272,7 @@ def gen_dataframe_multi_string_fields(string_fields, nb=ct.default_nb):
 
 
 def gen_dataframe_all_data_type(nb=ct.default_nb, dim=ct.default_dim, start=0):
-    int64_values = pd.Series(data=[i for i in range(start, start + nb)])
+    int64_values = pd.Series(data=list(range(start, start + nb)))
     int32_values = pd.Series(data=[np.int32(i) for i in range(start, start + nb)], dtype="int32")
     int16_values = pd.Series(data=[np.int16(i) for i in range(start, start + nb)], dtype="int16")
     int8_values = pd.Series(data=[np.int8(i) for i in range(start, start + nb)], dtype="int8")
@@ -281,22 +281,23 @@ def gen_dataframe_all_data_type(nb=ct.default_nb, dim=ct.default_dim, start=0):
     double_values = pd.Series(data=[np.double(i) for i in range(start, start + nb)], dtype="double")
     string_values = pd.Series(data=[str(i) for i in range(start, start + nb)], dtype="string")
     float_vec_values = gen_vectors(nb, dim)
-    df = pd.DataFrame({
-        ct.default_int64_field_name: int64_values,
-        ct.default_int32_field_name: int32_values,
-        ct.default_int16_field_name: int16_values,
-        ct.default_int8_field_name: int8_values,
-        ct.default_bool_field_name: bool_values,
-        ct.default_float_field_name: float_values,
-        ct.default_double_field_name: double_values,
-        ct.default_string_field_name: string_values,
-        ct.default_float_vec_field_name: float_vec_values
-    })
-    return df
+    return pd.DataFrame(
+        {
+            ct.default_int64_field_name: int64_values,
+            ct.default_int32_field_name: int32_values,
+            ct.default_int16_field_name: int16_values,
+            ct.default_int8_field_name: int8_values,
+            ct.default_bool_field_name: bool_values,
+            ct.default_float_field_name: float_values,
+            ct.default_double_field_name: double_values,
+            ct.default_string_field_name: string_values,
+            ct.default_float_vec_field_name: float_vec_values,
+        }
+    )
 
 
 def gen_default_binary_dataframe_data(nb=ct.default_nb, dim=ct.default_dim, start=0):
-    int_values = pd.Series(data=[i for i in range(start, start + nb)])
+    int_values = pd.Series(data=list(range(start, start + nb)))
     float_values = pd.Series(data=[np.float32(i) for i in range(start, start + nb)], dtype="float32")
     string_values = pd.Series(data=[str(i) for i in range(start, start + nb)], dtype="string")
     binary_raw_values, binary_vec_values = gen_binary_vectors(nb, dim)
@@ -310,30 +311,27 @@ def gen_default_binary_dataframe_data(nb=ct.default_nb, dim=ct.default_dim, star
 
 
 def gen_default_list_data(nb=ct.default_nb, dim=ct.default_dim):
-    int_values = [i for i in range(nb)]
+    int_values = list(range(nb))
     float_values = [np.float32(i) for i in range(nb)]
     string_values = [str(i) for i in range(nb)]
     float_vec_values = gen_vectors(nb, dim)
-    data = [int_values, float_values, string_values, float_vec_values]
-    return data
+    return [int_values, float_values, string_values, float_vec_values]
 
 
 def gen_default_list_data_for_bulk_load(nb=ct.default_nb, dim=ct.default_dim):
-    int_values = [i for i in range(nb)]
+    int_values = list(range(nb))
     float_values = [float(i) for i in range(nb)]
     string_values = [str(i) for i in range(nb)]
     float_vec_values = gen_vectors(nb, dim)
-    data = [int_values, float_values, string_values, float_vec_values]
-    return data
+    return [int_values, float_values, string_values, float_vec_values]
 
 
 def gen_default_tuple_data(nb=ct.default_nb, dim=ct.default_dim):
-    int_values = [i for i in range(nb)]
+    int_values = list(range(nb))
     float_values = [np.float32(i) for i in range(nb)]
     string_values = [str(i) for i in range(nb)]
     float_vec_values = gen_vectors(nb, dim)
-    data = (int_values, float_values, string_values, float_vec_values)
-    return data
+    return int_values, float_values, string_values, float_vec_values
 
 
 def gen_numpy_data(nb=ct.default_nb, dim=ct.default_dim):
@@ -341,12 +339,11 @@ def gen_numpy_data(nb=ct.default_nb, dim=ct.default_dim):
     float_values = np.arange(nb, dtype='float32')
     string_values = [np.str(i) for i in range(nb)]
     float_vec_values = gen_vectors(nb, dim)
-    data = [int_values, float_values, string_values, float_vec_values]
-    return data
+    return [int_values, float_values, string_values, float_vec_values]
 
 
 def gen_default_binary_list_data(nb=ct.default_nb, dim=ct.default_dim):
-    int_values = [i for i in range(nb)]
+    int_values = list(range(nb))
     float_values = [np.float32(i) for i in range(nb)]
     string_values = [str(i) for i in range(nb)]
     binary_raw_values, binary_vec_values = gen_binary_vectors(nb, dim)
@@ -359,23 +356,18 @@ def gen_simple_index():
     for i in range(len(ct.all_index_types)):
         if ct.all_index_types[i] in ct.binary_support:
             continue
-        dic = {"index_type": ct.all_index_types[i], "metric_type": "L2"}
-        dic.update({"params": ct.default_index_params[i]})
+        dic = {
+            "index_type": ct.all_index_types[i],
+            "metric_type": "L2",
+            "params": ct.default_index_params[i],
+        }
+
         index_params.append(dic)
     return index_params
 
 
 def gen_invalid_field_types():
-    field_types = [
-        6,
-        1.0,
-        [[]],
-        {},
-        (),
-        "",
-        "a"
-    ]
-    return field_types
+    return [6, 1.0, [[]], {}, (), "", "a"]
 
 
 def gen_invaild_search_params_type():
@@ -415,7 +407,10 @@ def gen_search_param(index_type, metric_type="L2"):
             search_params.append(ivf_search_params)
     elif index_type in ["BIN_FLAT", "BIN_IVF_FLAT"]:
         if metric_type not in ct.binary_metrics:
-            log.error("Metric type error: binary index only supports distance type in (%s)" % ct.binary_metrics)
+            log.error(
+                f"Metric type error: binary index only supports distance type in ({ct.binary_metrics})"
+            )
+
             # default metric type for binary index
             metric_type = "JACCARD"
         for nprobe in [64, 128]:
@@ -441,8 +436,15 @@ def gen_search_param(index_type, metric_type="L2"):
 
 def gen_invalid_search_param(index_type, metric_type="L2"):
     search_params = []
-    if index_type in ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_SQ8H", "IVF_PQ"] \
-            or index_type in ["BIN_FLAT", "BIN_IVF_FLAT"]:
+    if index_type in [
+        "FLAT",
+        "IVF_FLAT",
+        "IVF_SQ8",
+        "IVF_SQ8H",
+        "IVF_PQ",
+        "BIN_FLAT",
+        "BIN_IVF_FLAT",
+    ]:
         for nprobe in [-1]:
             ivf_search_params = {"metric_type": metric_type, "params": {"nprobe": nprobe}}
             search_params.append(ivf_search_params)
@@ -474,7 +476,7 @@ def gen_all_type_fields():
 
 
 def gen_normal_expressions():
-    expressions = [
+    return [
         "",
         "int64 > 0",
         "(int64 > 0 && int64 < 400) or (int64 > 500 && int64 < 1000)",
@@ -490,13 +492,12 @@ def gen_normal_expressions():
         "float <= 4**5/2 && float > 500-1 && float != 500/2+260",
         "int64 > 400 && int64 < 200",
         "float < -2**8",
-        "(int64 + 1) == 3 || int64 * 2 == 64 || float == 10**2"
+        "(int64 + 1) == 3 || int64 * 2 == 64 || float == 10**2",
     ]
-    return expressions
 
 
 def gen_normal_string_expressions(field):
-    expressions = [
+    return [
         f"\"0\"< {field} < \"3\"",
         f"{field} >= \"0\"",
         f"({field} > \"0\" && {field} < \"100\") or ({field} > \"200\" && {field} < \"300\")",
@@ -504,21 +505,16 @@ def gen_normal_string_expressions(field):
         f"{field} == \"0\"|| {field} == \"1\"|| {field} ==\"2\"",
         f"{field} != \"0\"",
         f"{field} not in [\"0\", \"1\", \"2\"]",
-        f"{field} in [\"0\", \"1\", \"2\"]"
+        f"{field} in [\"0\", \"1\", \"2\"]",
     ]
-    return expressions
 
 
 def gen_invaild_string_expressions():
-    expressions = [
-        "varchar in [0,  \"1\"]",
-        "varchar not in [\"0\", 1, 2]"
-    ]
-    return expressions
+    return ["varchar in [0,  \"1\"]", "varchar not in [\"0\", 1, 2]"]
 
 
 def gen_normal_expressions_field(field):
-    expressions = [
+    return [
         "",
         f"{field} > 0",
         f"({field} > 0 && {field} < 400) or ({field} > 500 && {field} < 1000)",
@@ -533,9 +529,8 @@ def gen_normal_expressions_field(field):
         f"{field} <= 4**5/2 && {field} > 500-1 && {field} != 500/2+260",
         f"{field} > 400 && {field} < 200",
         f"{field} < -2**8",
-        f"({field} + 1) == 3 || {field} * 2 == 64 || {field} == 10**2"
+        f"({field} + 1) == 3 || {field} * 2 == 64 || {field} == 10**2",
     ]
-    return expressions
 
 
 def l2(x, y):
@@ -616,20 +611,19 @@ def modify_file(file_path_list, is_modify=False, input_content=""):
     for file_path in file_path_list:
         folder_path, file_name = os.path.split(file_path)
         if not os.path.isdir(folder_path):
-            log.debug("[modify_file] folder(%s) is not exist." % folder_path)
+            log.debug(f"[modify_file] folder({folder_path}) is not exist.")
             os.makedirs(folder_path)
 
         if not os.path.isfile(file_path):
-            log.error("[modify_file] file(%s) is not exist." % file_path)
-        else:
-            if is_modify is True:
-                log.debug("[modify_file] start modifying file(%s)..." % file_path)
-                with open(file_path, "r+") as f:
-                    f.seek(0)
-                    f.truncate()
-                    f.write(input_content)
-                    f.close()
-                log.info("[modify_file] file(%s) modification is complete." % file_path_list)
+            log.error(f"[modify_file] file({file_path}) is not exist.")
+        elif is_modify is True:
+            log.debug(f"[modify_file] start modifying file({file_path})...")
+            with open(file_path, "r+") as f:
+                f.seek(0)
+                f.truncate()
+                f.write(input_content)
+                f.close()
+            log.info(f"[modify_file] file({file_path_list}) modification is complete.")
 
 
 def index_to_dict(index):
@@ -653,12 +647,12 @@ def gen_partitions(collection_w, partition_num=1):
     """
     log.info("gen_partitions: creating partitions")
     for i in range(partition_num):
-        partition_name = "search_partition_" + str(i)
+        partition_name = f"search_partition_{str(i)}"
         collection_w.create_partition(partition_name=partition_name,
                                       description="search partition")
     par = collection_w.partitions
     assert len(par) == (partition_num + 1)
-    log.info("gen_partitions: created partitions %s" % par)
+    log.info(f"gen_partitions: created partitions {par}")
 
 
 def insert_data(collection_w, nb=3000, is_binary=False, is_all_data_type=False,
@@ -696,10 +690,7 @@ def _check_primary_keys(primary_keys, nb):
     if primary_keys is None:
         raise Exception("The primary_keys is None")
     assert len(primary_keys) == nb
-    for i in range(nb - 1):
-        if primary_keys[i] >= primary_keys[i + 1]:
-            return False
-    return True
+    return all(primary_keys[i] < primary_keys[i + 1] for i in range(nb - 1))
 
 
 def get_segment_distribution(res):
@@ -723,10 +714,10 @@ def percent_to_int(string):
 
     new_int = -1
     if not isinstance(string, str):
-        log.error("%s is not a string" % string)
+        log.error(f"{string} is not a string")
         return new_int
     if "%" not in string:
-        log.error("%s is not a percent" % string)
+        log.error(f"{string} is not a percent")
     else:
         new_int = int(string.strip("%"))
 
@@ -734,28 +725,109 @@ def percent_to_int(string):
 
 
 def gen_grant_list(collection_name):
-    grant_list = [{"object": "Collection", "object_name": collection_name, "privilege": "Load"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Release"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Compaction"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Delete"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "GetStatistics"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "CreateIndex"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "IndexDetail"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "DropIndex"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Search"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Flush"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Query"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "LoadBalance"},
-                  {"object": "Collection", "object_name": collection_name, "privilege": "Import"},
-                  {"object": "Global", "object_name": "*", "privilege": "All"},
-                  {"object": "Global", "object_name": "*", "privilege": "CreateCollection"},
-                  {"object": "Global", "object_name": "*", "privilege": "DropCollection"},
-                  {"object": "Global", "object_name": "*", "privilege": "DescribeCollection"},
-                  {"object": "Global", "object_name": "*", "privilege": "ShowCollections"},
-                  {"object": "Global", "object_name": "*", "privilege": "CreateOwnership"},
-                  {"object": "Global", "object_name": "*", "privilege": "DropOwnership"},
-                  {"object": "Global", "object_name": "*", "privilege": "SelectOwnership"},
-                  {"object": "Global", "object_name": "*", "privilege": "ManageOwnership"},
-                  {"object": "User", "object_name": "*", "privilege": "UpdateUser"},
-                  {"object": "User", "object_name": "*", "privilege": "SelectUser"}]
-    return grant_list
+    return [
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Load",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Release",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Compaction",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Delete",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "GetStatistics",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "CreateIndex",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "IndexDetail",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "DropIndex",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Search",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Flush",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Query",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "LoadBalance",
+        },
+        {
+            "object": "Collection",
+            "object_name": collection_name,
+            "privilege": "Import",
+        },
+        {"object": "Global", "object_name": "*", "privilege": "All"},
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "CreateCollection",
+        },
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "DropCollection",
+        },
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "DescribeCollection",
+        },
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "ShowCollections",
+        },
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "CreateOwnership",
+        },
+        {"object": "Global", "object_name": "*", "privilege": "DropOwnership"},
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "SelectOwnership",
+        },
+        {
+            "object": "Global",
+            "object_name": "*",
+            "privilege": "ManageOwnership",
+        },
+        {"object": "User", "object_name": "*", "privilege": "UpdateUser"},
+        {"object": "User", "object_name": "*", "privilege": "SelectUser"},
+    ]
